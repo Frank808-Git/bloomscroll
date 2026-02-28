@@ -2,7 +2,7 @@
 	"manifest_version": 3,
 	"name": "DoomScrolling",
 	"version": "1.0.0",
-	"description": "Behavioral mock interviewer extension",
+	"description": "Anti DoomScrolling Application",
 	"action": {
 		"default_popup": "index.html"
 	}
