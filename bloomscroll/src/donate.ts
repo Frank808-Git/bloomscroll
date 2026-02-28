@@ -1,8 +1,4 @@
-// Frontend-only Stripe simulation.
-// In a production app, this would call a backend API endpoint that uses
-// the Stripe secret key to create a PaymentIntent server-side.
-// Since bloomscroll is a frontend-only Chrome extension, we simulate the
-// Stripe payment flow and response format locally.
+const STRIPE_SECRET_KEY = import.meta.env.VITE_STRIPE_SECRET_KEY as string;
 
 export interface DonationResult {
   success: boolean;
@@ -20,24 +16,42 @@ export const CHARITY_NAMES: Record<string, string> = {
   rc: "American Red Cross",
 };
 
-let sequence = 1;
-
 export async function triggerDonation(charityId: string): Promise<DonationResult> {
-  // Simulate Stripe API network latency (600–1000 ms)
-  await new Promise((resolve) => setTimeout(resolve, 600 + Math.random() * 400));
-
   const charityName = CHARITY_NAMES[charityId] ?? "American Red Cross";
-  const fakeIntentId = `pi_sim_${Date.now()}_${sequence++}`;
 
-  console.log(
-    `[Donate] Simulated PaymentIntent ${fakeIntentId} — status: succeeded — charity: ${charityName}`
-  );
+  const body = new URLSearchParams({
+    amount: "50",
+    currency: "usd",
+    payment_method: "pm_card_visa",
+    confirm: "true",
+    description: `Doomscrolling detected — $0.50 donated to ${charityName}`,
+    "metadata[cause]": charityName,
+    "metadata[trigger]": "doomscrolling_detected",
+    return_url: "https://bloomscroll.app",
+  });
+
+  const res = await fetch("https://api.stripe.com/v1/payment_intents", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body.toString(),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? "Stripe request failed");
+  }
+
+  console.log(`[Donate] PaymentIntent ${data.id} — status: ${data.status}`);
 
   return {
-    success: true,
-    paymentIntentId: fakeIntentId,
-    amount: 50, // 50 cents, matching the original Stripe amount
-    status: "succeeded",
+    success: data.status === "succeeded" || data.status === "requires_capture",
+    paymentIntentId: data.id,
+    amount: data.amount,
+    status: data.status,
     message: `$0.50 donated to ${charityName}`,
     charity: charityName,
   };
