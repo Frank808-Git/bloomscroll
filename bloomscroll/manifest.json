@@ -3,6 +3,12 @@
 	"name": "DoomScrolling",
 	"version": "1.0.0",
 	"description": "Anti DoomScrolling Application",
+	"content_scripts": [
+		{
+		"matches": ["https://www.instagram.com/*", "https://www.tiktok.com/*", "https://www.youtube.com/shorts/*"], 
+		"js": ["src/scripts/blacklist.ts"]
+		}
+	],
 	"action": {
 		"default_popup": "index.html"
 	},
