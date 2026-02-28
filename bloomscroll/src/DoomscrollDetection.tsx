@@ -343,7 +343,7 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
               "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite",
           },
           runningMode: "VIDEO",
-          scoreThreshold: 0.25,
+          scoreThreshold: 0.5,
           categoryAllowlist: ["cell phone"],
         }),
       ]);
