@@ -1,7 +1,6 @@
 "use client";
 import React, { useRef, useEffect, useState } from "react";
 
-// 1. Define the interface for the charity objects
 interface Charity {
 	id: string;
 	name: string;
@@ -40,165 +39,160 @@ const charities: Charity[] = [
 	},
 ];
 
-// 2. Add React.FC type to the component
 const WebcamWindow: React.FC = () => {
-	// 3. Type the useRef to specifically expect a video element
 	const videoRef = useRef<HTMLVideoElement>(null);
-
-	// 4. Add specific types to the state hooks
 	const [error, setError] = useState<string | null>(null);
 	const [activeTab, setActiveTab] = useState<"video" | "charities">("video");
-	const [selectedCharity, setSelectedCharity] = useState<string | null>(null);
+	const [selectedCharity, setSelectedCharity] = useState<string>("");
 
+	// Load from localStorage
 	useEffect(() => {
-		// Function to request and start the webcam stream
+		const saved = localStorage.getItem("selectedCharity");
+		if (saved) setSelectedCharity(saved);
+	}, []);
+
+	// Save to localStorage
+	useEffect(() => {
+		if (selectedCharity) {
+			localStorage.setItem("selectedCharity", selectedCharity);
+		}
+	}, [selectedCharity]);
+
+	// Webcam logic
+	useEffect(() => {
+		let stream: MediaStream;
+
 		const startVideo = async () => {
 			try {
-				const stream = await navigator.mediaDevices.getUserMedia({
-					video: true,
-				});
-
-				// Connect the stream to the video element
+				stream = await navigator.mediaDevices.getUserMedia({ video: true });
 				if (videoRef.current) {
 					videoRef.current.srcObject = stream;
 				}
 			} catch (err) {
-				console.error("Error accessing the webcam:", err);
-				setError("Could not access the webcam. Please check your permissions.");
+				setError("Could not access webcam. Please check permissions.");
 			}
 		};
 
-		// Only start the video if the video tab is active
-		if (activeTab === "video") {
-			startVideo();
-		}
+		if (activeTab === "video") startVideo();
 
-		// Cleanup: Stop the webcam when the component unmounts or tab changes
 		return () => {
-			if (videoRef.current && videoRef.current.srcObject) {
-				// Cast srcObject to MediaStream to access getTracks() in TypeScript
-				const stream = videoRef.current.srcObject as MediaStream;
-				const tracks = stream.getTracks();
-
-				tracks.forEach((track) => track.stop());
+			if (stream) {
+				stream.getTracks().forEach((track) => track.stop());
 			}
 		};
-	}, [activeTab]); // Added activeTab to dependency array so camera stops when switching tabs
+	}, [activeTab]);
+
+	const selected = charities.find((c) => c.id === selectedCharity);
 
 	return (
-		<div className="max-w-[600px] mx-auto font-sans p-4">
-			{/* The Tab Navigation Buttons */}
-			<div className="flex border-b-2 border-slate-200 mb-5">
-				<button
-					onClick={() => setActiveTab("video")}
-					className={`px-5 py-3 text-base transition-all duration-200 -mb-[2px] ${
-						activeTab === "video"
-							? "text-blue-600 border-b-2 border-blue-600 font-bold"
-							: "text-slate-500 hover:text-blue-600 font-medium"
-					}`}
-				>
-					Video
-				</button>
+		<div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-6">
+			<div className="w-full max-w-[720px] bg-white rounded-3xl shadow-2xl p-8">
+				{/* Header */}
+				<div className="mb-8">
+					<h1 className="text-3xl font-bold text-slate-800">
+						Charity Camera Portal
+					</h1>
+					<p className="text-slate-500 mt-2">
+						Choose a charity or activate your webcam.
+					</p>
+				</div>
 
-				<button
-					onClick={() => setActiveTab("charities")}
-					className={`px-5 py-3 text-base transition-all duration-200 -mb-[2px] ${
-						activeTab === "charities"
-							? "text-blue-600 border-b-2 border-blue-600 font-bold"
-							: "text-slate-500 hover:text-blue-600 font-medium"
-					}`}
-				>
-					Charity Selection
-				</button>
-			</div>
+				{/* Tabs */}
+				<div className="flex bg-slate-100 rounded-xl p-1 mb-8">
+					<button
+						onClick={() => setActiveTab("video")}
+						className={`flex-1 py-3 rounded-lg text-sm font-semibold transition ${
+							activeTab === "video"
+								? "bg-white shadow text-blue-600"
+								: "text-slate-500 hover:text-blue-600"
+						}`}
+					>
+						📹 Video
+					</button>
 
-			{/* The Tab Content (Conditional Rendering) */}
-			<div className="p-6 bg-slate-50 rounded-lg shadow-sm border border-slate-100 min-h-[400px]">
-				{/* Charity Selection Tab */}
-				{activeTab === "charities" && (
-					<div className="flex flex-col h-full">
-						<h3 className="text-xl font-semibold text-slate-800 mb-2">
-							Select a Charity
-						</h3>
-						<p className="text-slate-600 mb-6">
-							Choose an organization to support. Your selection will be saved.
-						</p>
+					<button
+						onClick={() => setActiveTab("charities")}
+						className={`flex-1 py-3 rounded-lg text-sm font-semibold transition ${
+							activeTab === "charities"
+								? "bg-white shadow text-blue-600"
+								: "text-slate-500 hover:text-blue-600"
+						}`}
+					>
+						❤️ Charity
+					</button>
+				</div>
 
-						<div className="grid grid-cols-1 gap-3">
-							{charities.map((charity) => (
-								<div
-									key={charity.id}
-									onClick={() => setSelectedCharity(charity.id)}
-									className={`flex items-start p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-										selectedCharity === charity.id
-											? "border-blue-600 bg-blue-50 shadow-sm"
-											: "border-slate-200 bg-white hover:border-blue-300 hover:bg-slate-50"
-									}`}
-								>
-									<div className="text-3xl mr-4">{charity.icon}</div>
-									<div className="flex-1">
-										<h4
-											className={`text-lg font-semibold ${
-												selectedCharity === charity.id
-													? "text-blue-800"
-													: "text-slate-800"
-											}`}
-										>
-											{charity.name}
-										</h4>
-										<p className="text-sm text-slate-600 mt-1">
-											{charity.description}
-										</p>
-									</div>
+				{/* Content */}
+				{activeTab === "video" && (
+					<div className="flex flex-col items-center text-center">
+						<h2 className="text-2xl font-bold text-slate-800 mb-6">
+							Live Camera
+						</h2>
 
-									{/* Selection Indicator */}
-									<div className="ml-4 flex items-center justify-center h-full pt-2">
-										<div
-											className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-												selectedCharity === charity.id
-													? "border-blue-600 bg-blue-600"
-													: "border-slate-300"
-											}`}
-										>
-											{selectedCharity === charity.id && (
-												<svg
-													className="w-4 h-4 text-white"
-													fill="none"
-													viewBox="0 0 24 24"
-													stroke="currentColor"
-												>
-													<path
-														strokeLinecap="round"
-														strokeLinejoin="round"
-														strokeWidth={3}
-														d="M5 13l4 4L19 7"
-													/>
-												</svg>
-											)}
-										</div>
-									</div>
-								</div>
-							))}
+						{error && (
+							<div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg mb-4 text-sm font-medium">
+								{error}
+							</div>
+						)}
+
+						<div className="relative p-4 bg-slate-900 rounded-2xl shadow-xl">
+							<video
+								ref={videoRef}
+								autoPlay
+								playsInline
+								muted
+								className="w-[450px] max-w-full rounded-xl -scale-x-100"
+							/>
 						</div>
 					</div>
 				)}
 
-				{/* Video Tab */}
-				{activeTab === "video" && (
-					<div className="flex flex-col items-center">
-						<h2 className="text-xl font-semibold text-slate-800 mb-4">
-							Webcam Feed
+				{activeTab === "charities" && (
+					<div>
+						<h2 className="text-2xl font-bold text-slate-800 mb-6">
+							Select a Charity
 						</h2>
 
-						{error && <p className="text-red-500 mb-4 font-medium">{error}</p>}
+						{/* Dropdown */}
+						<div className="relative">
+							<select
+								value={selectedCharity}
+								onChange={(e) => setSelectedCharity(e.target.value)}
+								className="w-full appearance-none bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+							>
+								<option value="">Choose an organization</option>
+								{charities.map((charity) => (
+									<option key={charity.id} value={charity.id}>
+										{charity.icon} {charity.name}
+									</option>
+								))}
+							</select>
 
-						<video
-							ref={videoRef}
-							autoPlay
-							playsInline
-							muted
-							className="w-full max-w-[500px] rounded-xl bg-neutral-900 shadow-md -scale-x-100"
-						/>
+							{/* Custom Arrow */}
+							<div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
+								▼
+							</div>
+						</div>
+
+						{/* Selected Preview */}
+						{selected && (
+							<div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-2xl shadow-sm transition">
+								<div className="flex items-start">
+									<div className="text-3xl mr-4">{selected.icon}</div>
+									<div>
+										<h3 className="text-lg font-semibold text-blue-800">
+											{selected.name}
+										</h3>
+										<p className="text-sm text-slate-600 mt-2">
+											{selected.description}
+										</p>
+									</div>
+								</div>
+								<div className="mt-4 text-green-600 text-sm font-medium">
+									✓ Selection saved
+								</div>
+							</div>
+						)}
 					</div>
 				)}
 			</div>
