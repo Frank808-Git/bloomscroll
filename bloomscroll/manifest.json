@@ -1,9 +1,10 @@
 {
 	"manifest_version": 3,
-	"name": "DoomScrolling",
-	"version": "1.0.0",
-	"description": "Behavioral mock interviewer extension",
+	"name": "Charity Camera",
+	"version": "1.0",
 	"action": {
 		"default_popup": "index.html"
-	}
+	},
+	"permissions": ["storage"],
+	"host_permissions": ["<all_urls>"]
 }
