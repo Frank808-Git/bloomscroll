@@ -1,0 +1,9 @@
+{
+	"manifest_version": 3,
+	"name": "My AI Interviewer",
+	"version": "1.0.0",
+	"description": "Behavioral mock interviewer extension",
+	"action": {
+		"default_popup": "index.html"
+	}
+}
