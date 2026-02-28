@@ -1,5 +1,5 @@
-"use client";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import DoomscrollDetection from "./DoomscrollDetection";
 
 interface Charity {
 	id: string;
@@ -40,9 +40,7 @@ const charities: Charity[] = [
 ];
 
 const WebcamWindow: React.FC = () => {
-	const videoRef = useRef<HTMLVideoElement>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [activeTab, setActiveTab] = useState<"video" | "charities">("video");
+	const [activeTab, setActiveTab] = useState<"detection" | "charities">("detection");
 	const [selectedCharity, setSelectedCharity] = useState<string>("");
 
 	// Load from localStorage
@@ -51,36 +49,12 @@ const WebcamWindow: React.FC = () => {
 		if (saved) setSelectedCharity(saved);
 	}, []);
 
-	// Save to localStorage
+	// Save to localStorage whenever selection changes
 	useEffect(() => {
 		if (selectedCharity) {
 			localStorage.setItem("selectedCharity", selectedCharity);
 		}
 	}, [selectedCharity]);
-
-	// Webcam logic
-	useEffect(() => {
-		let stream: MediaStream;
-
-		const startVideo = async () => {
-			try {
-				stream = await navigator.mediaDevices.getUserMedia({ video: true });
-				if (videoRef.current) {
-					videoRef.current.srcObject = stream;
-				}
-			} catch (err) {
-				setError("Could not access webcam. Please check permissions.");
-			}
-		};
-
-		if (activeTab === "video") startVideo();
-
-		return () => {
-			if (stream) {
-				stream.getTracks().forEach((track) => track.stop());
-			}
-		};
-	}, [activeTab]);
 
 	const selected = charities.find((c) => c.id === selectedCharity);
 
@@ -89,25 +63,23 @@ const WebcamWindow: React.FC = () => {
 			<div className="w-full max-w-[720px] bg-white rounded-3xl shadow-2xl p-8">
 				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-slate-800">
-						Charity Camera Portal
-					</h1>
+					<h1 className="text-3xl font-bold text-slate-800">BloomScroll</h1>
 					<p className="text-slate-500 mt-2">
-						Choose a charity or activate your webcam.
+						Doomscrolling detected → automatic donation to your chosen charity.
 					</p>
 				</div>
 
 				{/* Tabs */}
 				<div className="flex bg-slate-100 rounded-xl p-1 mb-8">
 					<button
-						onClick={() => setActiveTab("video")}
+						onClick={() => setActiveTab("detection")}
 						className={`flex-1 py-3 rounded-lg text-sm font-semibold transition ${
-							activeTab === "video"
+							activeTab === "detection"
 								? "bg-white shadow text-blue-600"
 								: "text-slate-500 hover:text-blue-600"
 						}`}
 					>
-						📹 Video
+						🔍 Detection
 					</button>
 
 					<button
@@ -122,31 +94,12 @@ const WebcamWindow: React.FC = () => {
 					</button>
 				</div>
 
-				{/* Content */}
-				{activeTab === "video" && (
-					<div className="flex flex-col items-center text-center">
-						<h2 className="text-2xl font-bold text-slate-800 mb-6">
-							Live Camera
-						</h2>
-
-						{error && (
-							<div className="bg-red-50 text-red-600 px-4 py-2 rounded-lg mb-4 text-sm font-medium">
-								{error}
-							</div>
-						)}
-
-						<div className="relative p-4 bg-slate-900 rounded-2xl shadow-xl">
-							<video
-								ref={videoRef}
-								autoPlay
-								playsInline
-								muted
-								className="w-[450px] max-w-full rounded-xl -scale-x-100"
-							/>
-						</div>
-					</div>
+				{/* Detection Tab */}
+				{activeTab === "detection" && (
+					<DoomscrollDetection selectedCharity={selectedCharity || null} />
 				)}
 
+				{/* Charity Tab */}
 				{activeTab === "charities" && (
 					<div>
 						<h2 className="text-2xl font-bold text-slate-800 mb-6">
@@ -168,13 +121,13 @@ const WebcamWindow: React.FC = () => {
 								))}
 							</select>
 
-							{/* Custom Arrow */}
+							{/* Custom arrow */}
 							<div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-500">
 								▼
 							</div>
 						</div>
 
-						{/* Selected Preview */}
+						{/* Selected preview */}
 						{selected && (
 							<div className="mt-6 p-6 bg-blue-50 border border-blue-200 rounded-2xl shadow-sm transition">
 								<div className="flex items-start">
@@ -189,7 +142,7 @@ const WebcamWindow: React.FC = () => {
 									</div>
 								</div>
 								<div className="mt-4 text-green-600 text-sm font-medium">
-									✓ Selection saved
+									✓ Selection saved — switch to Detection to start monitoring
 								</div>
 							</div>
 						)}
