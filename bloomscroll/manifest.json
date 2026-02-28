@@ -1,7 +1,8 @@
 {
 	"manifest_version": 3,
-	"name": "Charity Camera",
-	"version": "1.0",
+	"name": "DoomScrolling",
+	"version": "1.0.0",
+	"description": "Anti DoomScrolling Application",
 	"action": {
 		"default_popup": "index.html"
 	},
