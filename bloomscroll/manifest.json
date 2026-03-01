@@ -1,14 +1,27 @@
 {
 	"manifest_version": 3,
-	"name": "DoomScrolling",
+	"name": "bloomscroll",
 	"version": "1.0.0",
-	"description": "Anti DoomScrolling Application",
+	"description": "scroll for good",
+	"content_scripts": [
+		{
+		"matches": ["https://www.instagram.com/*", "https://www.tiktok.com/*", "https://www.youtube.com/shorts/*"], 
+		"js": ["src/scripts/blacklist.ts"]
+		}
+	],
 	"action": {
-		"default_popup": "index.html"
+		"default_popup": "index.html",
+		"default_icon": "src/assets/bloomscroll_logo_nobg.png"
 	},
 	"permissions": ["storage", "tabs"],
 	"host_permissions": ["<all_urls>", "https://api.stripe.com/"],
 	"content_security_policy": {
 		"extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+	},
+	"icons": {
+		"16": "src/assets/bloomscroll_logo_nobg16.png",
+		"32": "src/assets/bloomscroll_logo_nobg32.png",
+		"48": "src/assets/bloomscroll_logo_nobg48.png",
+		"128": "src/assets/bloomscroll_logo_nobg128.png"
 	}
 }
