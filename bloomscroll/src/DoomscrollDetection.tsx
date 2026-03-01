@@ -9,6 +9,11 @@ import {
   type ObjectDetectorResult,
 } from "@mediapipe/tasks-vision";
 import { triggerDonation, CHARITY_NAMES } from "./donate";
+import { playCaching } from "./sound";
+
+import useSound from 'use-sound';
+import moneySound from "./assets/moneysound.mp3";
+import { Howler } from "howler";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -100,10 +105,37 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const objectDetectorRef = useRef<ObjectDetector | null>(null);
 
+  const [play, { stop }] = useSound(moneySound, {
+    volume: 1,
+    interrupt: true,   // forces restart if already playing
+  });
+
+  useEffect(() => {
+    const unlock = async () => {
+      try {
+        if (Howler.ctx && Howler.ctx.state !== "running") {
+          await Howler.ctx.resume();
+        }
+        console.log("Audio ctx:", Howler.ctx?.state); // should become "running"
+      } catch (e) {
+        console.error("Audio unlock failed", e);
+      }
+    };
+  
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+  
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
+
   // Rolling frame counter — increments toward CONFIRM_FRAMES when signal is
   // active, decrements when not. Absorbs brief model misses without resetting
   // the hold timer.
-  const confirmCountRef = useRef(0);
+  const confirmCountRef    = useRef(0);
+  const prevConfirmedRef   = useRef(false); // for logging state changes only
 
   // Time-based hold tracking
   const holdStartRef    = useRef<number | null>(null);
@@ -198,38 +230,83 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
         setSignals({ grip: gripDetected, gazeDown, phoneObj: phoneInFrame, irisDown });
         setConfirmed(isConfirmed);
 
+        // Log signal breakdown only when confirmed state changes
+        if (isConfirmed !== prevConfirmedRef.current) {
+          console.log(
+            `[Doom] Confirmed state → ${isConfirmed}` +
+            ` | signals: grip=${gripDetected} gazeDown=${gazeDown} irisDown=${irisDown} phoneInFrame=${phoneInFrame}` +
+            ` | activeSignals=${activeSignals} rawDoomscroll=${rawDoomscroll} phoneBlockingFace=${phoneBlockingFace}` +
+            ` | confirmCount=${confirmCountRef.current}/${CONFIRM_FRAMES}`
+          );
+          prevConfirmedRef.current = isConfirmed;
+        }
+
         // ── Donation trigger ──────────────────────────────────────────────────
 
         const now = performance.now();
 
         if (isConfirmed) {
-          if (holdStartRef.current === null) holdStartRef.current = now;
+          if (holdStartRef.current === null) {
+            holdStartRef.current = now;
+            console.log("[Doom] Hold timer STARTED");
+          }
 
           const sinceLastDonation = now - lastDonationRef.current;
-          const remaining = Math.max(0, COOLDOWN_MS - sinceLastDonation);
+          const holdElapsed       = now - holdStartRef.current;
+          const remaining         = Math.max(0, COOLDOWN_MS - sinceLastDonation);
           setCooldownSec(Math.ceil(remaining / 1000));
 
-          const heldLongEnough = now - holdStartRef.current >= HOLD_MS;
+          const heldLongEnough = holdElapsed >= HOLD_MS;
           const cooldownDone   = sinceLastDonation >= COOLDOWN_MS;
 
+          // Log progress every ~500 ms to avoid spam
+          if (Math.floor(holdElapsed / 500) !== Math.floor((holdElapsed - 16) / 500)) {
+            console.log(
+              `[Doom] Waiting to donate…` +
+              ` hold=${Math.round(holdElapsed)}ms/${HOLD_MS}ms (heldLongEnough=${heldLongEnough})` +
+              ` cooldown=${Math.round(sinceLastDonation)}ms/${COOLDOWN_MS}ms (cooldownDone=${cooldownDone})` +
+              ` charity="${selectedCharityRef.current}"`
+            );
+          }
+
           if (heldLongEnough && cooldownDone) {
+            console.log(
+              `[Doom] All conditions met — firing donation! charity="${selectedCharityRef.current ?? "rc"}"`
+            );
             lastDonationRef.current = now;
             holdStartRef.current    = null;
             setDonationCount((c) => c + 1);
+            playCaching();
             setShowMoneyFly(true);
             setTimeout(() => setShowMoneyFly(false), 1500);
-
-            // Frontend-only Stripe simulation (reads latest charity via ref)
+            
             triggerDonation(selectedCharityRef.current ?? "rc")
               .then((result) => {
+                console.log("[Doom] triggerDonation resolved:", result);
                 if (result.success) {
                   setNotification(result.message);
                   setTimeout(() => setNotification(null), 4000);
+                } else {
+                  console.warn("[Doom] Donation returned success=false:", result);
                 }
               })
-              .catch(console.error);
+              .catch((err) => {
+                console.error("[Doom] triggerDonation threw an error:", err);
+              });
+          } else if (!heldLongEnough && !cooldownDone) {
+            // both blocking
+          } else if (!heldLongEnough) {
+            // still holding — normal, no log needed
+          } else {
+            console.warn(
+              `[Doom] Hold long enough but cooldown NOT done yet — ` +
+              `${Math.round(COOLDOWN_MS - sinceLastDonation)}ms remaining`
+            );
           }
         } else {
+          if (holdStartRef.current !== null) {
+            console.log("[Doom] Confirmed lost — hold timer RESET");
+          }
           holdStartRef.current = null;
           setCooldownSec(0);
         }
@@ -447,8 +524,12 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
         onClick={async () => {
           setTestLoading(true);
           try {
+            stop();
+            play();
+
             const result = await triggerDonation(selectedCharityRef.current ?? "rc");
             if (result.success) {
+              playCaching();
               setDonationCount((c) => c + 1);
               setNotification(result.message);
               setTimeout(() => setNotification(null), 4000);
