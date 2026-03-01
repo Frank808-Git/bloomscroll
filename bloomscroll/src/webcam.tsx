@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import DoomscrollDetection from "./DoomscrollDetection";
+import BlacklistTab from "./BlacklistTab";
 
 interface Charity {
 	id: string;
@@ -40,7 +41,7 @@ const charities: Charity[] = [
 ];
 
 const WebcamWindow: React.FC = () => {
-	const [activeTab, setActiveTab] = useState<"detection" | "charities">("detection");
+	const [activeTab, setActiveTab] = useState<"detection" | "charities" | "blacklist">("detection");
 	const [selectedCharity, setSelectedCharity] = useState<string>("");
 
 	// Load from localStorage
@@ -63,7 +64,7 @@ const WebcamWindow: React.FC = () => {
 			<div className="w-full max-w-[720px] bg-white rounded-3xl shadow-2xl p-8">
 				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-slate-800">BloomScroll</h1>
+					<h1 className="text-3xl font-bold text-slate-800">Bloomscroll</h1>
 					<p className="text-slate-500 mt-2">
 						Doomscrolling detected → automatic donation to your chosen charity.
 					</p>
@@ -91,6 +92,17 @@ const WebcamWindow: React.FC = () => {
 						}`}
 					>
 						❤️ Charity
+					</button>
+
+					<button
+						onClick={() => setActiveTab("blacklist")}
+						className={`flex-1 py-3 rounded-lg text-sm font-semibold transition ${
+							activeTab === "blacklist"
+								? "bg-white shadow text-blue-600"
+								: "text-slate-500 hover:text-blue-600"
+						}`}
+					>
+						🔐 Blacklist
 					</button>
 				</div>
 
@@ -147,6 +159,16 @@ const WebcamWindow: React.FC = () => {
 							</div>
 						)}
 					</div>
+				)}
+
+				{activeTab === "blacklist" && (
+				<div>
+					<h2 className="text-2xl font-bold text-slate-800 mb-6">Blacklist</h2>
+					<p className="text-slate-600">
+					Add sites you want blocked while monitoring.
+					</p>
+					{activeTab === "blacklist" && <BlacklistTab />}
+				</div>
 				)}
 			</div>
 		</div>
