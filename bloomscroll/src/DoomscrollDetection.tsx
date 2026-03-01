@@ -279,7 +279,7 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
             playCaching();
             setShowMoneyFly(true);
             setTimeout(() => setShowMoneyFly(false), 1500);
-            
+
             triggerDonation(selectedCharityRef.current ?? "rc")
               .then((result) => {
                 console.log("[Doom] triggerDonation resolved:", result);
@@ -556,15 +556,15 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
       
       <div style={{
         position: "fixed",
-        bottom: 24,
-        left: 24,
+        bottom: 36,
+        left: 36,
         zIndex: 999999,
         padding: "12px 18px",
         borderRadius: 12,
-        background: "#fedea8ff",
+        background: "rgba(0,0,0,0.8)",
         color: "#fff",
         fontFamily: "sans-serif",
-        fontSize: 24,
+        fontSize: 14,
         fontWeight: 600,
         boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
         pointerEvents: "none",
