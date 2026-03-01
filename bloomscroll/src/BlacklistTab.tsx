@@ -1,5 +1,6 @@
 // src/BlacklistTab.tsx
 import { useEffect, useMemo, useState } from "react";
+import InputRow from "./InputRow";
 
 const STORAGE_KEY = "bloomscroll_blacklist";
 
@@ -111,60 +112,85 @@ export default function BlacklistTab() {
   return (
     <div>
       <h2 className="text-2xl font-bold text-slate-800 mb-2">Blacklist</h2>
-      <p className="text-slate-500 mb-6">
-        Add domains or URLs. When you visit a matching site, BloomScroll will trigger donations.
+      <p className="text-slate-500 mb-6" style={{ textAlign: "left", marginBottom: 8}}>
+        If you visit an added site, bloomscroll will start donating to your selected charity.
       </p>
 
-      <div className="flex gap-2">
-        <input
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") onAdd();
-          }}
-          placeholder="e.g. twitter.com  or  https://reddit.com/r/all"
-          className="flex-1 bg-slate-50 border border-slate-300 rounded-xl px-4 py-3 text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-        />
-        <button
-          onClick={onAdd}
-          className="px-4 py-3 rounded-xl font-semibold bg-blue-600 text-white hover:bg-blue-700 transition"
-        >
-          Add
-        </button>
-      </div>
+      <InputRow value={value} onChange={setValue} onAdd={onAdd} />
 
       {error && <div className="mt-3 text-sm font-medium text-red-600">{error}</div>}
 
-      <div className="mt-6 flex items-center justify-between">
-        <div className="text-sm text-slate-600">
+      <div style={{ marginTop: 24, display: "flex", alignItems: "center", gap: 12 }}>
+        <span style={{ fontSize: 13, color: "#64748b" }}>
           {items.length} {items.length === 1 ? "entry" : "entries"}
-        </div>
+        </span>
         <button
           onClick={onClear}
           disabled={items.length === 0}
-          className="text-sm font-semibold text-slate-500 hover:text-red-600 disabled:opacity-40 disabled:hover:text-slate-500 transition"
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: "#64748b",
+            background: "none",
+            border: "none",
+            cursor: items.length === 0 ? "default" : "pointer",
+            opacity: items.length === 0 ? 0.4 : 1,
+          }}
+          onMouseEnter={(e) => { if (items.length > 0) e.currentTarget.style.color = "#ef4444"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = "#64748b"; }}
         >
           Clear all
         </button>
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div
+        style={{
+          maxHeight: 280,
+          overflowY: "auto",
+          borderRadius: 16,
+          border: "1px solid #e2e8f0",
+        }}
+      >
         {items.length === 0 ? (
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-500">
+          <div style={{ padding: "24px 16px", textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
             No blacklisted sites yet.
           </div>
         ) : (
           items.map((item, idx) => (
             <div
               key={`${item}-${idx}`}
-              className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-2xl shadow-sm"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "12px 16px",
+                borderBottom: idx < items.length - 1 ? "1px solid #f1f5f9" : "none",
+                background: "#fff",
+              }}
             >
-              <div className="text-slate-800 font-medium break-all">{item}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{
+                  width: 8, height: 8, borderRadius: "50%", background: "#3b82f6", flexShrink: 0
+                }} />
+                <span style={{ fontSize: 13, color: "#334155", fontFamily: "monospace" }}>{item}</span>
+              </div>
               <button
                 onClick={() => onRemove(idx)}
-                className="ml-3 px-3 py-1 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 transition"
+                style={{
+                  marginLeft: 12,
+                  padding: "4px 10px",
+                  borderRadius: 8,
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#ef4444",
+                  background: "transparent",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#fef2f2")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
               >
-                Remove
+                ✕
               </button>
             </div>
           ))
