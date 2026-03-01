@@ -246,12 +246,6 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
 
             // Frontend-only Stripe simulation (reads latest charity via ref)
             console.log("Donation triggered")
-            try {
-              stop();   // ensure previous instance is killed
-              play();   // always starts fresh
-            } catch (e) {
-              console.error("play() threw", e);
-            }
             triggerDonation(selectedCharityRef.current ?? "rc")
               .then((result) => {
                 if (result.success) {
@@ -490,6 +484,9 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
         onClick={async () => {
           setTestLoading(true);
           try {
+            stop();
+            play();
+
             const result = await triggerDonation(selectedCharityRef.current ?? "rc");
             if (result.success) {
               setDonationCount((c) => c + 1);
