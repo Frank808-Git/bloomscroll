@@ -177,6 +177,7 @@ async function startTimerIfBlacklisted() {
 
     if (seconds % DONATE_EVERY_SECONDS === 0) {
       const charity = await getSelectedCharity();
+      console.log("Charged");
       triggerDonation(charity)
         .then((result) => {
           if (result?.success) showDonationNotif();

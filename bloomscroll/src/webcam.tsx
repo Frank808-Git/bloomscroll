@@ -163,10 +163,6 @@ const WebcamWindow: React.FC = () => {
 
 				{activeTab === "blacklist" && (
 				<div>
-					<h2 className="text-2xl font-bold text-slate-800 mb-6">Blacklist</h2>
-					<p className="text-slate-600">
-					Add sites you want blocked while monitoring.
-					</p>
 					{activeTab === "blacklist" && <BlacklistTab />}
 				</div>
 				)}
