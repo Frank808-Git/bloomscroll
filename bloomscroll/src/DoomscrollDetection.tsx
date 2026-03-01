@@ -53,7 +53,7 @@ function isPhoneGrip(hand: Point[]): boolean {
   }
 
   // 2 — thumb pulled toward middle of palm (landmark 9 = middle-finger MCP)
-  const thumbClose = dist3D(hand[4], hand[9]) < 0.25;
+  const thumbClose = dist3D(hand[4], hand[9]) < 0.35;
 
   // 3 — portrait bounding box
   const xs = hand.map((p) => p.x);
@@ -82,7 +82,7 @@ function isGazingDown(face: Point[]): boolean {
   if (face.length < 478) return false;
   const leftRatio = (face[468].y - face[159].y) / (Math.abs(face[145].y - face[159].y) || 0.001);
   const rightRatio = (face[473].y - face[386].y) / (Math.abs(face[374].y - face[386].y) || 0.001);
-  return (leftRatio + rightRatio) / 2 > 0.65;
+  return (leftRatio + rightRatio) / 2 > 0.55;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -105,7 +105,7 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
 
   // Time-based hold tracking
   const holdStartRef    = useRef<number | null>(null);
-  const lastDonationRef = useRef<number>(0);
+  const lastDonationRef = useRef<number>(-COOLDOWN_MS);
 
   // Keep a ref to selectedCharity so the draw loop (memoized with [])
   // can always read the latest value without being re-created.
@@ -121,6 +121,7 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
   const [cooldownSec,   setCooldownSec]   = useState(0);
   const [pitchDeg,      setPitchDeg]      = useState<number | null>(null);
   const [notification,  setNotification]  = useState<string | null>(null);
+  const [testLoading,   setTestLoading]   = useState(false);
 
   const drawLoop = useCallback(
     (
@@ -445,6 +446,38 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
           <span style={{ color: "#888", marginLeft: 10 }}>cooldown {cooldownSec}s</span>
         )}
       </div>
+
+      {/* Test button */}
+      <button
+        disabled={testLoading}
+        onClick={async () => {
+          setTestLoading(true);
+          try {
+            const result = await triggerDonation(selectedCharityRef.current ?? "rc");
+            if (result.success) {
+              setDonationCount((c) => c + 1);
+              setNotification(result.message);
+              setTimeout(() => setNotification(null), 4000);
+            }
+          } catch (e) {
+            setNotification(`Error: ${e instanceof Error ? e.message : String(e)}`);
+            setTimeout(() => setNotification(null), 5000);
+          } finally {
+            setTestLoading(false);
+          }
+        }}
+        style={{
+          padding: "8px 16px",
+          borderRadius: 8,
+          border: "1px solid #d1d5db",
+          background: testLoading ? "#f3f4f6" : "#fff",
+          cursor: testLoading ? "not-allowed" : "pointer",
+          fontSize: 13,
+          color: "#374151",
+        }}
+      >
+        {testLoading ? "Charging…" : "💳 Test Stripe Donation"}
+      </button>
 
       <video ref={videoRef} style={{ display: "none" }} playsInline />
       <canvas
