@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DoomscrollDetection from "./DoomscrollDetection";
 import BlacklistTab from "./BlacklistTab";
+import bloomscrollText from "./assets/bloomscroll_text_nobg.png";
 
 interface Charity {
 	id: string;
@@ -64,7 +65,7 @@ const WebcamWindow: React.FC = () => {
 			<div className="w-full max-w-[720px] bg-white rounded-3xl shadow-2xl p-8">
 				{/* Header */}
 				<div className="mb-8">
-					<h1 className="text-3xl font-bold text-slate-800">Bloomscroll</h1>
+					<img src={bloomscrollText} />
 					<p className="text-slate-500 mt-2">
 						Doomscrolling detected → automatic donation to your chosen charity.
 					</p>
