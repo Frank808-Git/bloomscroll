@@ -12,6 +12,8 @@ import { triggerDonation, CHARITY_NAMES } from "./donate";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+const DEBUG = false;
+
 // Number of consecutive frames the combined signal must hold before we treat it
 // as "confirmed". At ~30 fps this is ≈ 0.5 s of consistent detection, which
 // absorbs single-frame model misses without adding noticeable latency.
@@ -22,7 +24,7 @@ const CONFIRM_FRAMES = 15;
 const HOLD_MS = 2_000;
 
 // Minimum gap between consecutive donations.
-const COOLDOWN_MS = 30_000;
+const COOLDOWN_MS = 10_000;
 
 // MediaPipe hand landmark indices
 const FINGER_TIPS = [4, 8, 12, 16, 20]; // thumb → pinky tips
@@ -122,6 +124,7 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
   const [pitchDeg,      setPitchDeg]      = useState<number | null>(null);
   const [notification,  setNotification]  = useState<string | null>(null);
   const [testLoading,   setTestLoading]   = useState(false);
+  const [showMoneyFly, setShowMoneyFly] = useState(false);
 
   const drawLoop = useCallback(
     (
@@ -213,6 +216,8 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
             lastDonationRef.current = now;
             holdStartRef.current    = null;
             setDonationCount((c) => c + 1);
+            setShowMoneyFly(true);
+            setTimeout(() => setShowMoneyFly(false), 1500);
 
             // Frontend-only Stripe simulation (reads latest charity via ref)
             triggerDonation(selectedCharityRef.current ?? "rc")
@@ -385,11 +390,11 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
   }, [drawLoop]);
 
   const charityName = selectedCharity ? (CHARITY_NAMES[selectedCharity] ?? selectedCharity) : null;
-
+  console.log("DEBUG: " + DEBUG);
   return (
     <div style={{ fontFamily: "monospace", display: "grid", gap: 12, padding: "8px 0" }}>
       {/* Donation toast notification */}
-      {notification && (
+      {DEBUG && notification && (
         <div
           style={{
             position: "fixed",
@@ -409,46 +414,35 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
         </div>
       )}
 
-      <div style={{ fontSize: 13 }}>
+      {DEBUG && <div style={{ fontSize: 13 }}>
         <b>Status:</b> {status}
-      </div>
+      </div>}
 
-      {charityName && (
-        <div style={{ fontSize: 13, color: "#555" }}>
-          Donating to: <b>{charityName}</b>
-        </div>
-      )}
-      {!charityName && (
-        <div style={{ fontSize: 12, color: "#f97316" }}>
-          No charity selected — defaulting to American Red Cross
-        </div>
-      )}
+      {/* Donation counter + cooldown */}
+      {DEBUG && <div style={{ fontSize: 14 }}>
+        <b>Donations triggered:</b> {donationCount}
+        {cooldownSec > 0 && confirmed && (
+          <span style={{ color: "#888", marginLeft: 10 }}>cooldown {cooldownSec}s</span>
+        )}
+      </div>}
 
       {/* Signal pills */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      {DEBUG && <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <Signal label="Phone grip"     active={signals.grip} />
         <Signal label="Looking down"   active={signals.gazeDown} />
         <Signal label="Eyes down"      active={signals.irisDown} />
         <Signal label="Phone detected" active={signals.phoneObj} />
         <Signal label="DOOMSCROLLING"  active={confirmed} highlight />
-      </div>
+      </div>}
 
       {/* Live pitch readout */}
-      <div style={{ fontSize: 12, color: "#6b7280" }}>
+      {DEBUG && <div style={{ fontSize: 12, color: "#6b7280" }}>
         Head pitch: {pitchDeg !== null ? `${pitchDeg}°` : "—"}
         <span style={{ marginLeft: 8, color: "#aaa" }}>(triggers at &gt;5°)</span>
-      </div>
-
-      {/* Donation counter + cooldown */}
-      <div style={{ fontSize: 14 }}>
-        <b>Donations triggered:</b> {donationCount}
-        {cooldownSec > 0 && confirmed && (
-          <span style={{ color: "#888", marginLeft: 10 }}>cooldown {cooldownSec}s</span>
-        )}
-      </div>
+      </div>}
 
       {/* Test button */}
-      <button
+      {DEBUG && <button
         disabled={testLoading}
         onClick={async () => {
           setTestLoading(true);
@@ -477,13 +471,61 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
         }}
       >
         {testLoading ? "Charging…" : "💳 Test Stripe Donation"}
-      </button>
+      </button>}
+      
+      <div style={{
+        position: "fixed",
+        bottom: 24,
+        left: 24,
+        zIndex: 999999,
+        padding: "12px 18px",
+        borderRadius: 12,
+        background: "#fedea8ff",
+        color: "#fff",
+        fontFamily: "sans-serif",
+        fontSize: 24,
+        fontWeight: 600,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        pointerEvents: "none",
+        animation: "fadein 0.3s ease",
+        opacity: confirmed ? 1 : 0,
+        transition: "opacity 0.5s ease",
+      }}>
+        {":( you're distracted!"}
+      </div>
 
       <video ref={videoRef} style={{ display: "none" }} playsInline />
-      <canvas
-        ref={canvasRef}
-        style={{ width: "100%", borderRadius: 12, border: "1px solid #e5e7eb" }}
-      />
+      <div style={{ position: "relative" }}>
+        <div style={{ position: "absolute", top: 12, right: 12, zIndex: 10, display: "flex", gap: 8 }}>
+          <div style={{
+            padding: "6px 14px",
+            borderRadius: 20,
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(4px)",
+            fontSize: 13,
+            color: "#fff",
+          }}>
+            ♥︎ <b>{charityName}</b>
+          </div>
+          <div style={{
+            padding: "6px 14px",
+            borderRadius: 20,
+            background: "rgba(0,0,0,0.55)",
+            backdropFilter: "blur(4px)",
+            fontSize: 13,
+            color: "#fff",
+          }}>
+            <b>$ {(donationCount * 0.50).toFixed(2)}</b> donated
+          </div>
+          {showMoneyFly && (
+            <span className="money-fly" style={{ bottom: 0, left: "50%" }}>💸</span>
+          )}
+        </div>
+        <canvas
+          ref={canvasRef}
+          style={{ width: "100%", borderRadius: 12, border: "1px solid #e5e7eb", display: "block" }}
+        />
+      </div>
     </div>
   );
 }

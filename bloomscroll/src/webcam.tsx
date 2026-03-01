@@ -63,9 +63,9 @@ const WebcamWindow: React.FC = () => {
 				{/* Tabs */}
 				<div style={{ display: "flex", borderBottom: "1.5px solid #e2e8f0", marginBottom: 32, gap: 0, alignItems: "flex-end"}}>
 					{[
-						{ id: "detection", label: "🔍 Detection" },
-						{ id: "charities", label: "❤️ Charity" },
-						{ id: "blacklist", label: "🔐 Blacklist" },
+						{ id: "detection", label: "‼ detection" },
+						{ id: "charities", label: "♥︎ charity" },
+						{ id: "blacklist", label: "⊖ blacklist" },
 					].map((tab) => (
 						<button
 						key={tab.id}
