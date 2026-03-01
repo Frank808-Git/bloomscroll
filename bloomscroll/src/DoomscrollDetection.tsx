@@ -11,6 +11,10 @@ import {
 import { triggerDonation, CHARITY_NAMES } from "./donate";
 import { playCaching } from "./sound";
 
+import useSound from 'use-sound';
+import moneySound from "./assets/moneysound.mp3";
+import { Howler } from "howler";
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 // Number of consecutive frames the combined signal must hold before we treat it
@@ -98,6 +102,32 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
   const handLandmarkerRef = useRef<HandLandmarker | null>(null);
   const faceLandmarkerRef = useRef<FaceLandmarker | null>(null);
   const objectDetectorRef = useRef<ObjectDetector | null>(null);
+
+  const [play, { stop }] = useSound(moneySound, {
+    volume: 1,
+    interrupt: true,   // forces restart if already playing
+  });
+
+  useEffect(() => {
+    const unlock = async () => {
+      try {
+        if (Howler.ctx && Howler.ctx.state !== "running") {
+          await Howler.ctx.resume();
+        }
+        console.log("Audio ctx:", Howler.ctx?.state); // should become "running"
+      } catch (e) {
+        console.error("Audio unlock failed", e);
+      }
+    };
+  
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+  
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, []);
 
   // Rolling frame counter — increments toward CONFIRM_FRAMES when signal is
   // active, decrements when not. Absorbs brief model misses without resetting
@@ -500,6 +530,9 @@ export default function DoomscrollDetection({ selectedCharity }: Props) {
         onClick={async () => {
           setTestLoading(true);
           try {
+            stop();
+            play();
+
             const result = await triggerDonation(selectedCharityRef.current ?? "rc");
             if (result.success) {
               playCaching();

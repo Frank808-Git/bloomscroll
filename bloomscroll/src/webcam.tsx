@@ -53,50 +53,50 @@ const WebcamWindow: React.FC = () => {
 	}, [selectedCharity]);
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-6">
+		<div className="bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center p-6" style={{ minHeight: "65vh", width: 720 }}>
 			<div className="w-full max-w-[720px] bg-white rounded-3xl shadow-2xl p-8">
 				{/* Header */}
-				<div className="mb-8">
+				<div style={{ marginBottom: 24 }}>
 					<img src={bloomscrollText} />
-					<p className="text-slate-500 mt-2">
-						Doomscrolling detected → automatic donation to your chosen charity.
-					</p>
 				</div>
 
 				{/* Tabs */}
-				<div className="flex bg-slate-100 rounded-xl p-1 mb-8">
-					<button
-						onClick={() => setActiveTab("detection")}
-						className={`flex-1 py-3 rounded-lg text-sm font-semibold transition ${
-							activeTab === "detection"
-								? "bg-white shadow text-blue-600"
-								: "text-slate-500 hover:text-blue-600"
-						}`}
-					>
-						🔍 Detection
-					</button>
-
-					<button
-						onClick={() => setActiveTab("charities")}
-						className={`flex-1 py-3 rounded-lg text-sm font-semibold transition ${
-							activeTab === "charities"
-								? "bg-white shadow text-blue-600"
-								: "text-slate-500 hover:text-blue-600"
-						}`}
-					>
-						❤️ Charity
-					</button>
-
-					<button
-						onClick={() => setActiveTab("blacklist")}
-						className={`flex-1 py-3 rounded-lg text-sm font-semibold transition ${
-							activeTab === "blacklist"
-								? "bg-white shadow text-blue-600"
-								: "text-slate-500 hover:text-blue-600"
-						}`}
-					>
-						🔐 Blacklist
-					</button>
+				<div style={{ display: "flex", borderBottom: "1.5px solid #e2e8f0", marginBottom: 32, gap: 0, alignItems: "flex-end"}}>
+					{[
+						{ id: "detection", label: "🔍 Detection" },
+						{ id: "charities", label: "❤️ Charity" },
+						{ id: "blacklist", label: "🔐 Blacklist" },
+					].map((tab) => (
+						<button
+						key={tab.id}
+						onClick={() => setActiveTab(tab.id as typeof activeTab)}
+						style={{
+							borderRadius: 0,
+							padding: "10px 20px",
+							background: "none",
+							border: "none",
+							borderBottom: activeTab === tab.id ? "2px solid #3b82f6" : "2px solid transparent",
+							marginBottom: "-1.5px",
+							color: activeTab === tab.id ? "#3b82f6" : "#64748b",
+							fontWeight: 600,
+							fontSize: 14,
+							cursor: "pointer",
+							transition: "all 0.2s",
+							outline: "none",
+						}}
+						onMouseEnter={(e) => {
+							if (activeTab !== tab.id) e.currentTarget.style.color = "#334155";
+						}}
+						onMouseLeave={(e) => {
+							if (activeTab !== tab.id) e.currentTarget.style.color = "#64748b";
+						}}
+						>
+						{tab.label}
+						</button>
+					))}
+					<span style={{ marginLeft: "auto", fontSize: 13, color: "#94a3b8", fontStyle: "italic", paddingBottom: 10}}>
+						turning doomscrolling into good.
+					</span>
 				</div>
 
 				{/* Detection Tab */}
